@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        .sidebar {
+            height: 100%;
+            width: 200px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .main {
+            margin-left: 200px;
+            padding: 20px;
+        }
+        .product-card {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Opciones</h2>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link active" href="index.html">Productos</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="pedidos.html">Pedidos</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="mesas.html">Mesas</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="newproduct.html">Nuebo producto</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="borras-buscar.html">Buscar y Borrar</a>
+        </li>
+    </ul>
+</div>
+
+<div class="main">
+    <h2>Productos</h2>
+    <div id="productCards" class="row">
+        <!-- Las tarjetas de producto se agregarán aquí -->
+    </div>
+</div>
+
+<!-- Modales -->
+<div class="modal fade" id="accion1Modal" tabindex="-1" aria-labelledby="accion1ModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="accion1ModalLabel">Ticket de Compra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="accion1Form">
+                    <input type="hidden" id="productoId">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre del Producto:</label>
+                        <input type="text" class="form-control" id="nombre" required disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción:</label>
+                        <textarea class="form-control" id="descripcion" required disabled></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="precio" class="form-label">Precio:</label>
+                        <input type="number" class="form-control" id="precio" required disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="metodoPago" class="form-label">Método de Pago:</label>
+                        <select class="form-select" id="metodoPago" required>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="tarjeta">Tarjeta</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generar Ticket</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="accion2Modal" tabindex="-1" aria-labelledby="accion2ModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="accion2ModalLabel">Acción 2 - Agregar a Mesa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="accion2Form">
+                    <div class="mb-3">
+                        <label for="mesaId" class="form-label">Seleccione la Mesa:</label>
+                        <select class="form-select" id="mesaId">
+                            <!-- Opciones de mesas se agregarán aquí desde JavaScript -->
+                        </select>
+                        <div class="mb-3">
+                            <label for="precio" class="form-label">Prudcuto Id:</label>
+                            <input type="number" class="form-control" id="productoIds" required disabled>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar a Mesa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS y jQuery -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+
+<script>
+
+    function obtenerProductoPorId(id) {
+        return fetch(`/productos/${id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('No se pudo obtener el producto');
+                }
+                return response.json();
+            })
+            .then(producto => {
+                return producto;
+            })
+            .catch(error => {
+                console.error('Error al obtener el producto:', error);
+            });
+    }
+    // Realizar una solicitud GET para obtener los productos
+    fetch('/productos')
+        .then(response => response.json())
+        .then(data => {
+            // Agregar cada producto como una tarjeta
+            const productCards = document.getElementById('productCards');
+            data.forEach(producto => {
+                const card = `
+                <div class="col-md-4">
+                    <div class="card product-card">
+                        <img src="expresso.jpeg" class="card-img-top" alt="...">
+                        <div class="card-body">
+                            <h5 class="card-title">${producto.nombre}</h5>
+                            <p class="card-text">${producto.descripcion}</p>
+                            <p class="card-text">Precio: ${producto.precio}</p>
+                            <button class="btn btn-primary">Compra Directa</button>
+                            <button class="btn btn-secondary">Pedido de Mesa</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+                productCards.innerHTML += card;
+            });
+
+            // Event listeners para los botones de acción en cada tarjeta
+            document.querySelectorAll('.btn-primary').forEach((button, index) => {
+                button.addEventListener('click', () => handleAction1(index, data));
+            });
+
+            document.querySelectorAll('.btn-secondary').forEach((button, index) => {
+                button.addEventListener('click', () => handleAction2(index));
+            });
+        })
+        .catch(error => {
+            console.error('Error al obtener los productos:', error);
+        });
+
+    // Función para manejar la acción 1
+    function handleAction1(index, data) {
+        // Obtener el producto seleccionado
+        const selectedProduct = data[index];
+        // Mostrar los datos del producto en la modal
+        document.getElementById('nombre').value = selectedProduct.nombre;
+        document.getElementById('descripcion').value = selectedProduct.descripcion;
+        document.getElementById('precio').value = selectedProduct.precio;
+        // Mostrar la modal
+        $('#accion1Modal').modal('show');
+    }
+
+    // Función para manejar la acción 2
+    function handleAction2(index) {
+        // Implementa la lógica para la acción 2 aquí
+        console.log('Acción 2 en el producto', index+1);
+        document.getElementById('productoIds').value = index+1;
+        // Seleccionar el ID del producto y mostrar el modal de acción 2
+        $('#accion2Modal').modal('show');
+    }
+
+    // Evento de envío del formulario de Acción 1
+    document.getElementById('accion1Form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const metodoPago = document.getElementById('metodoPago').value;
+        // Aquí puedes hacer la solicitud POST con los datos y el método de pago
+        // Mostrar el mensaje de compra realizada con éxito
+        alert('Compra realizada con éxito');
+        $('#accion1Modal').modal('hide');
+    });
+
+    // Evento de envío del formulario de Acción 2
+    document.getElementById('accion2Form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const mesaId = document.getElementById('mesaId').value;
+        const productId = document.getElementById('productoIds').value;
+        const ahora = new Date();
+
+        try {
+            // Obtener el producto por su ID
+            const producto = await obtenerProductoPorId(productId);
+
+            // Enviar la orden a la mesa con el producto
+            const response = await fetch('/ordenes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    mesaId: mesaId,
+                    producto: producto,
+                    estado: "En Preparacion",
+                    horaPedido: ahora.getHours().toString().padStart(2, '0'),
+                    horaCompletado: ahora.getHours().toString().padStart(2, '0')
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data2 = await response.json();
+            try {
+                // Enviar la solicitud POST para crear una nueva mesa
+                const response = await fetch('/mesas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: mesaId, // Se espera que el servidor genere el ID, pero enviamos 0 por ahora
+                        codigo: mesaId, // El código de la mesa obtenido del formulario
+                        orden: data2, // Objeto de orden, puede dejarlo vacío por ahora o proporcionar datos relevantes si es necesario
+                        horaCreacion: ahora.toISOString(), // Convertir la fecha y hora actual a formato ISO (ej: "2024-05-05T10:00:00.000Z")
+                        horaUltimaActualizacion: ahora.toISOString() // Usar la misma hora de creación para la última actualización
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al crear la mesa');
+                }
+
+                const data = await response.json();
+
+                // Aquí puedes agregar lógica adicional si es necesario después de crear la mesa
+
+            } catch (error) {
+                console.error('Hubo un problema al crear la mesa:', error);
+            }
+        } catch (error) {
+            console.error('Hubo un problema con la solicitud fetch:', error);
+        }
+        alert('Orden realizada con éxito');
+        $('#accion2Modal').modal('hide');
+    });
+
+    // Cargar opciones de mesas en el modal de Acción 2
+    fetch('/mesas')
+        .then(response => response.json())
+        .then(data => {
+            const selectMesa = document.getElementById('mesaId');
+            data.forEach(mesa => {
+                const option = document.createElement('option');
+                option.value = mesa.id;
+                option.text = `Mesa ${mesa.id}`;
+                selectMesa.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error al obtener las mesas:', error);
+        });
+
+
+</script>
+
+</body>
+</html>

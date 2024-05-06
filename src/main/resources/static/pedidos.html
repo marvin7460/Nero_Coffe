@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Órdenes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <style>
+        .sidebar {
+            height: 100%;
+            width: 200px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .main {
+            margin-left: 200px;
+            padding: 20px;
+        }
+        .order-card {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Opciones</h2>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link" href="index.html">Productos</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="pedidos.html">Pedidos</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="mesas.html">Mesas</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="newproduct.html">Nueva orden</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="borras-buscar.html">Buscar y Borrar</a>
+        </li>
+    </ul>
+</div>
+
+<div class="main">
+    <h1>Órdenes</h1>
+    <div id="ordenes-container" class="row"></div>
+</div>
+
+<!-- Bootstrap JS y jQuery -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch('/ordenes')
+            .then(response => response.json())
+            .then(data => {
+                const ordenesContainer = document.getElementById('ordenes-container');
+
+                data.forEach(orden => {
+                    const ordenCard = createOrdenCard(orden);
+                    ordenesContainer.appendChild(ordenCard);
+                });
+            })
+            .catch(error => {
+                console.error('Error al obtener los datos de las órdenes:', error);
+            });
+    });
+
+    function createOrdenCard(orden) {
+        const ordenCard = document.createElement('div');
+        ordenCard.classList.add('col-md-4', 'order-card');
+        ordenCard.innerHTML = `
+        <div class="card">
+            <div class="card-body">
+                <img src="expresso.jpeg" class="card-img-top" alt="...">
+                <h5 class="card-title">${orden.producto.nombre}</h5>
+                <p class="card-text">Descripción: ${orden.producto.descripcion}</p>
+                <p class="card-text">Precio: ${orden.producto.precio}</p>
+                <p class="card-text">Estado: ${orden.estado}</p>
+                <p class="card-text">Hora del pedido: ${new Date(orden.horaPedido).toLocaleString()}</p>
+                ${orden.horaCompletado ? `<p class="card-text">Hora completado: ${new Date(orden.horaCompletado).toLocaleString()}</p>` : ''}
+                <button class="btn btn-primary" onclick="marcarCompletado(${orden.id})">Marcar como completado</button>
+                <button class="btn btn-danger" onclick="cancelarPedido(${orden.id})">Cancelar pedido</button>
+            </div>
+        </div>
+    `;
+        return ordenCard;
+    }
+
+    function marcarCompletado(ordenId) {
+        fetch(`/ordenes/${ordenId}`)
+            .then(response => response.json())
+            .then(data => {
+                const data2 = data
+
+                data.estado = "Completado"
+                fetch(`/ordenes/${data2.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data2)
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error('Error al actualizar la orden');
+                    })
+                    .then(updatedOrder => {
+                        actualizarOrdenes();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            })
+            .catch(error => {
+                console.error('Error al obtener los datos de las órdenes:', error);
+            });
+    }
+
+    function cancelarPedido(ordenId) {
+        console.log('Pedido cancelado:', ordenId);
+        fetch(`/ordenes/${ordenId}`, {
+            method: 'DELETE',
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Hubo un problema al intentar eliminar la orden.');
+                }
+                console.log('La orden ha sido eliminada correctamente.');
+                // Actualizar la lista de órdenes
+                actualizarOrdenes();
+            })
+            .catch(error => {
+                console.error('Error al intentar eliminar la orden:', error);
+            });
+    }
+
+    function actualizarOrdenes() {
+        const ordenesContainer = document.getElementById('ordenes-container');
+        // Limpiar el contenedor de órdenes
+        ordenesContainer.innerHTML = '';
+        // Volver a solicitar las órdenes y actualizar la lista
+        fetch('/ordenes')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(orden => {
+                    const ordenCard = createOrdenCard(orden);
+                    ordenesContainer.appendChild(ordenCard);
+                });
+            })
+            .catch(error => {
+                console.error('Error al obtener los datos de las órdenes:', error);
+            });
+    }
+</script>
+
+</body>
+</html>
